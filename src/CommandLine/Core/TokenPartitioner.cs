@@ -21,10 +21,11 @@ namespace CommandLine.Core
             var switches = new HashSet<Token>(Switch.Partition(tokenList, typeLookup), tokenComparer);
             var scalars = new HashSet<Token>(Scalar.Partition(tokenList, typeLookup), tokenComparer);
             var sequences = new HashSet<Token>(Sequence.Partition(tokenList, typeLookup), tokenComparer);
+            var dedupedSequences = new HashSet<Token>(sequences);
             var nonOptions = tokenList
                 .Where(t => !switches.Contains(t))
                 .Where(t => !scalars.Contains(t))
-                .Where(t => !sequences.Contains(t)).Memorize();
+                .Where(t => !dedupedSequences.Contains(t)).Memorize();
             var values = nonOptions.Where(v => v.IsValue()).Memorize();
             var errors = nonOptions.Except(values, (IEqualityComparer<Token>)ReferenceEqualityComparer.Default).Memorize();
 

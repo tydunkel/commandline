@@ -860,5 +860,58 @@ namespace CommandLine.Tests.Unit
                     Assert.Equal("two", args.Arg2);
                 });
         }
+
+        [Fact]
+        public void Parse_repeated_options_in_verbs_scenario_with_multi_instance()
+        {
+            using (var sut = new Parser(settings => settings.AllowMultiInstance = true))
+            {
+                var longVal1 = 100;
+                var longVal2 = 200;
+                var longVal3 = 300;
+                var stringVal = "shortSeq1";
+
+                var result = sut.ParseArguments(
+                    new[] { "sequence", "--long-seq", $"{longVal1}", "-s", stringVal, "--long-seq", $"{longVal2};{longVal3}" },
+                    typeof(Add_Verb), typeof(Commit_Verb), typeof(SequenceOptions));
+
+                Assert.IsType<Parsed<object>>(result);
+                Assert.IsType<SequenceOptions>(((Parsed<object>)result).Value);
+                result.WithParsed<SequenceOptions>(verb =>
+                {
+                    Assert.Equal(new long[] { longVal1, longVal2, longVal3 }, verb.LongSequence);
+                    Assert.Equal(new[] { stringVal }, verb.StringSequence);
+                });
+            }
+        }
+
+        [Fact]
+        public void Parse_repeated_options_in_verbs_scenario_without_multi_instance()
+        {
+            using (var sut = new Parser(settings => settings.AllowMultiInstance = false))
+            {
+                var longVal1 = 100;
+                var longVal2 = 200;
+                var longVal3 = 300;
+                var stringVal = "shortSeq1";
+
+                var result = sut.ParseArguments(
+                    new[] { "sequence", "--long-seq", $"{longVal1}", "-s", stringVal, "--long-seq", $"{longVal2};{longVal3}" },
+                    typeof(Add_Verb), typeof(Commit_Verb), typeof(SequenceOptions));
+
+                Assert.IsType<NotParsed<object>>(result);
+                result.WithNotParsed(errors => Assert.All(errors, e =>
+                {
+                    if (e is RepeatedOptionError)
+                    {
+                        // expected
+                    }
+                    else
+                    {
+                        throw new Exception($"{nameof(RepeatedOptionError)} expected");
+                    }
+                }));
+            }
+        }
     }
 }

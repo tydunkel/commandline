@@ -18,7 +18,7 @@ namespace CommandLine.Tests.Unit.Core
 {
     public class InstanceBuilderTests
     {
-        private static ParserResult<T> InvokeBuild<T>(string[] arguments, bool autoHelp = true, bool autoVersion = true)
+        private static ParserResult<T> InvokeBuild<T>(string[] arguments, bool autoHelp = true, bool autoVersion = true, bool multiInstance = false)
             where T : new()
         {
             return InstanceBuilder.Build(
@@ -30,6 +30,7 @@ namespace CommandLine.Tests.Unit.Core
                 CultureInfo.InvariantCulture,
                 autoHelp,
                 autoVersion,
+                multiInstance,
                 Enumerable.Empty<ErrorType>());
         }
 
@@ -1156,6 +1157,17 @@ namespace CommandLine.Tests.Unit.Core
             Action act = () => InvokeBuild<ValueWithNoSetterOptions>(new string[] { "Test" }, false, false);
 
             act.Should().Throw<InvalidOperationException>();
+        }
+
+        [Fact]
+        public void Parse_int_sequence_with_multi_instance()
+        {
+            var expected = new[] { 1, 2, 3 };
+            var result = InvokeBuild<Options_With_Sequence>(
+                new[] { "--int-seq", "1", "2", "--int-seq", "3" },
+                multiInstance: true);
+
+            ((Parsed<Options_With_Sequence>)result).Value.IntSequence.Should().BeEquivalentTo(expected);
         }
 
         private class ValueWithNoSetterOptions

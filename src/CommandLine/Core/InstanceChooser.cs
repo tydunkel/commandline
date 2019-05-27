@@ -23,6 +23,31 @@ namespace CommandLine.Core
             bool autoVersion,
             IEnumerable<ErrorType> nonFatalErrors)
         {
+            return Choose(
+                tokenizer,
+                types,
+                arguments,
+                nameComparer,
+                ignoreValueCase,
+                parsingCulture,
+                autoHelp,
+                autoVersion,
+                false,
+                nonFatalErrors);
+        }
+
+        public static ParserResult<object> Choose(
+            Func<IEnumerable<string>, IEnumerable<OptionSpecification>, Result<IEnumerable<Token>, Error>> tokenizer,
+            IEnumerable<Type> types,
+            IEnumerable<string> arguments,
+            StringComparer nameComparer,
+            bool ignoreValueCase,
+            CultureInfo parsingCulture,
+            bool autoHelp,
+            bool autoVersion,
+            bool allowMultiInstance,
+            IEnumerable<ErrorType> nonFatalErrors)
+        {
             Func<ParserResult<object>> choose = () =>
             {
                 var firstArg = arguments.First();
@@ -39,7 +64,7 @@ namespace CommandLine.Core
                             arguments.Skip(1).FirstOrDefault() ?? string.Empty, nameComparer))
                     : (autoVersion && preprocCompare("version"))
                         ? MakeNotParsed(types, new VersionRequestedError())
-                        : MatchVerb(tokenizer, verbs, arguments, nameComparer, ignoreValueCase, parsingCulture, autoHelp, autoVersion, nonFatalErrors);
+                        : MatchVerb(tokenizer, verbs, arguments, nameComparer, ignoreValueCase, parsingCulture, autoHelp, autoVersion, allowMultiInstance, nonFatalErrors);
             };
 
             return arguments.Any()
@@ -56,6 +81,7 @@ namespace CommandLine.Core
             CultureInfo parsingCulture,
             bool autoHelp,
             bool autoVersion,
+            bool allowMultiInstance,
             IEnumerable<ErrorType> nonFatalErrors)
         {
             return verbs.Any(a => nameComparer.Equals(a.Item1.Name, arguments.First()))
@@ -70,6 +96,7 @@ namespace CommandLine.Core
                     parsingCulture,
                     autoHelp,
                     autoVersion,
+                    allowMultiInstance,
                     nonFatalErrors)
                 : MakeNotParsed(verbs.Select(v => v.Item2), new BadVerbSelectedError(arguments.First()));
         }
